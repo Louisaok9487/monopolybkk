@@ -11,7 +11,14 @@
         body {
             font-family: 'Inter', sans-serif;
             overflow: hidden;
-            background-color: #0d1b2a; /* Dark Blue background */
+            color: #e2e8f0;
+
+            /* Background with Bangkok skyline and dark overlay */
+            background-image: linear-gradient(rgba(13, 27, 42, 0.9), rgba(13, 27, 42, 0.98)), url('https://images.pexels.com/photos/2166559/pexels-photo-2166559.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
         }
         .board-bg {
             background-color: #1b263b; /* Darker board background */
@@ -138,7 +145,7 @@
         }
     </style>
 </head>
-<body class="text-gray-200 flex items-center justify-center h-screen">
+<body class="flex items-center justify-center h-screen">
 
     <!-- Setup Screen -->
     <div id="setup-screen" class="flex flex-col text-center p-8 panel-bg rounded-lg shadow-lg border border-gray-700">
