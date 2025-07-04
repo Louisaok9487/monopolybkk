@@ -240,7 +240,6 @@
             const cashSynth = new Tone.FMSynth({ harmonicity: 2, modulationIndex: 3, envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.2 } }).toDestination();
             const buySynth = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.2 } }).toDestination();
             const rentSynth = new Tone.Synth({ oscillator: { type: 'sawtooth' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0, release: 0.1 } }).toDestination();
-            const jailSynth = new Tone.Synth({ oscillator: { type: 'pulse', width: 0.2 }, envelope: { attack: 0.1, decay: 0.2, sustain: 0.5, release: 1 } }).toDestination();
             const cardSynth = new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.001, decay: 0.1, sustain: 0 } }).toDestination();
             const winSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'fatsawtooth' }, envelope: { attack: 0.1, decay: 0.5, sustain: 0.2, release: 0.5 } }).toDestination();
             const loseSynth = new Tone.Synth({ oscillator: { type: 'fatsquare' }, envelope: { attack: 0.1, decay: 1, sustain: 0, release: 0.1 } }).toDestination();
@@ -252,7 +251,6 @@
                 cash: () => { const now = Tone.now(); cashSynth.triggerAttackRelease('C5', '8n', now); cashSynth.triggerAttackRelease('G5', '8n', now + 0.1); },
                 buy: () => { const now = Tone.now(); buySynth.triggerAttackRelease('C4', '8n', now); buySynth.triggerAttackRelease('G4', '8n', now + 0.12); },
                 rent: () => { const now = Tone.now(); rentSynth.triggerAttackRelease('G3', '8n', now); rentSynth.triggerAttackRelease('C3', '8n', now + 0.12); },
-                jail: () => { jailSynth.triggerAttackRelease('A5', '0.8s'); },
                 card: () => cardSynth.triggerAttackRelease('0.2'),
                 win: () => winSynth.triggerAttackRelease(['C4', 'E4', 'G4', 'C5'], '1s'),
                 lose: () => { loseSynth.triggerAttack('C4', Tone.now()); loseSynth.frequency.rampTo('C3', 0.8, Tone.now()); loseSynth.triggerRelease(Tone.now() + 0.8); },
@@ -575,7 +573,6 @@
         function handleSpecialSpace(player, space) {
             switch(space.type) {
                 case "go-to-jail":
-                    playSound('jail');
                     showAutoModal("Go To Jam!", `${player.name} is stuck in traffic.`, 1200, () => { goToJail(player); nextTurn(); });
                     break;
                 case "tax":
