@@ -587,22 +587,31 @@
             }
         }
 
-        async function movePlayer(steps) {
+        function movePlayer(steps) {
             const player = players[currentPlayerIndex];
-            for (let i = 0; i < steps; i++) {
+            let stepsTaken = 0;
+
+            function moveOneStep() {
+                if (stepsTaken >= steps) {
+                    handleLandedSpace();
+                    return;
+                }
+                stepsTaken++;
                 player.position = (player.position + 1) % boardSpaces.length;
                 updatePlayerTokenPosition(player);
-                
-                let hopInterval = BASE_MOVE_DELAY / (gameSpeed === 0.5 ? 1.0 : gameSpeed);
-                await new Promise(resolve => setTimeout(resolve, hopInterval));
 
-                if (player.position === 0 && i < steps -1) { 
-                     updatePlayerMoney(player, 200, false);
-                     showAutoModal("Passed GO", `${player.name} collected $200.`, 1200);
-                     await sleep(1200);
+                if (player.position === 0 && stepsTaken < steps) {
+                    updatePlayerMoney(player, 200, false);
+                    showAutoModal("Passed GO", `${player.name} collected $200.`, 1200, () => {
+                         const hopInterval = BASE_MOVE_DELAY / (gameSpeed === 0.5 ? 1.0 : gameSpeed);
+                         setTimeout(moveOneStep, hopInterval);
+                    });
+                } else {
+                    const hopInterval = BASE_MOVE_DELAY / (gameSpeed === 0.5 ? 1.0 : gameSpeed);
+                    setTimeout(moveOneStep, hopInterval);
                 }
             }
-            handleLandedSpace();
+            moveOneStep();
         }
 
         function handleLandedSpace() {
