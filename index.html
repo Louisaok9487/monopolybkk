@@ -172,10 +172,10 @@
     <!-- Mode Selection Modal -->
     <div id="mode-selection-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
         <div class="panel-bg rounded-lg shadow-2xl p-8 text-center">
-            <h2 class="text-2xl font-bold mb-6">選擇顯示模式</h2>
+            <h2 class="text-2xl font-bold mb-6">Select Display Mode</h2>
             <div class="flex flex-col sm:flex-row gap-4">
-                <button onclick="selectMode('mobile')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg">手機模式 (Mobile)</button>
-                <button onclick="selectMode('desktop')" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg text-lg">桌機模式 (Desktop)</button>
+                <button onclick="selectMode('mobile')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg">Mobile Mode</button>
+                <button onclick="selectMode('desktop')" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg text-lg">Desktop Mode</button>
             </div>
         </div>
     </div>
@@ -559,10 +559,16 @@
                 return;
             }
 
-            rollDiceBtn.disabled = currentPlayer.isAI;
-            managePropBtn.disabled = currentPlayer.isAI;
-            rollDiceBtn.classList.toggle('opacity-50', currentPlayer.isAI);
-            managePropBtn.classList.toggle('opacity-50', currentPlayer.isAI);
+            const isHumanTurn = !currentPlayer.isAI;
+            rollDiceBtn.disabled = !isHumanTurn;
+            managePropBtn.disabled = !isHumanTurn;
+            rollDiceBtn.classList.toggle('opacity-50', !isHumanTurn);
+            managePropBtn.classList.toggle('opacity-50', !isHumanTurn);
+            document.querySelectorAll('.speed-btn').forEach(btn => {
+                btn.disabled = !isHumanTurn;
+                btn.classList.toggle('opacity-50', !isHumanTurn);
+            });
+
 
             if (currentPlayer.isAI) {
                 await sleep(500);
