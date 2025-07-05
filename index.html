@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,29 +8,30 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
+        html {
+            height: 100%;
+        }
         body {
             font-family: 'Inter', sans-serif;
-            overflow: hidden;
             color: #e2e8f0;
-
-            /* Background with Bangkok skyline and dark overlay */
             background-image: linear-gradient(rgba(13, 27, 42, 0.9), rgba(13, 27, 42, 0.98)), url('https://images.pexels.com/photos/2166559/pexels-photo-2166559.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1');
             background-size: cover;
             background-position: center center;
             background-repeat: no-repeat;
             background-attachment: fixed;
+            overflow-x: hidden;
         }
         .board-bg {
-            background-color: #1b263b; /* Darker board background */
+            background-color: #1b263b;
         }
         .panel-bg {
-            background-color: #1b263b; /* Dark panel */
-            color: #e2e8f0; /* Light text */
+            background-color: #1b263b;
+            color: #e2e8f0;
         }
         .property-card, .corner, .special-card {
-            background-color: #2a4365; /* Darker card background */
-            border: 1px solid #4a5568; /* Grey border */
-            color: #e2e8f0; /* Light text */
+            background-color: #2a4365;
+            border: 1px solid #4a5568;
+            color: #e2e8f0;
             display: flex;
             flex-direction: column;
             text-align: center;
@@ -81,7 +82,6 @@
             transition: top 0.15s ease-out, left 0.15s ease-out, transform 0.15s ease-in-out;
             z-index: 10;
             border: 2px solid #ffffff;
-            /* White glow effect for visibility */
             text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff;
         }
         .token-hop {
@@ -143,12 +143,34 @@
             font-size: 1.5rem;
             border: 1px solid #4a5568;
         }
+        
+        /* Responsive Adjustments for Mobile */
+        @media (max-width: 767px) {
+            #game-board {
+                grid-template-columns: 50px repeat(9, 1fr) 50px;
+                grid-template-rows: 50px repeat(9, 1fr) 50px;
+                gap: 1px;
+            }
+            .property-card, .corner, .special-card {
+                font-size: 0.45rem;
+                line-height: 1;
+            }
+            .property-card .name { padding: 1px; }
+            .special-card .emoji, .corner .emoji { font-size: 1.2rem; }
+            .player-token { width: 28px; height: 28px; font-size: 20px; border-width: 1px; }
+            #center-console h2 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+            .dice { width: 40px; height: 40px; }
+            .dot { width: 8px; height: 8px; }
+            #center-console .flex { flex-wrap: wrap; justify-content: center; }
+            #roll-dice-btn, #manage-prop-btn { padding: 0.5rem 1rem; font-size: 1rem; }
+            .speed-btn { padding: 0.25rem 0.5rem; }
+        }
     </style>
 </head>
-<body class="flex items-center justify-center h-screen">
+<body class="h-full">
 
     <!-- Setup Screen -->
-    <div id="setup-screen" class="flex flex-col text-center p-8 panel-bg rounded-lg shadow-lg border border-gray-700">
+    <div id="setup-screen" class="flex flex-col text-center p-8 panel-bg rounded-lg shadow-lg border border-gray-700 max-w-sm mx-auto my-auto">
         <h1 class="text-4xl font-bold mb-4 text-gray-100">Bangkok Monopoly</h1>
         <div class="mb-4">
             <label for="player-name" class="block text-lg mb-2">Enter your name:</label>
@@ -174,10 +196,9 @@
     </div>
 
     <!-- Main Game Screen -->
-    <div id="game-container" class="hidden w-full h-full flex p-4 gap-4 relative">
+    <div id="game-container" class="hidden w-full h-full flex-col md:flex-row p-1 md:p-4 gap-2 md:gap-4 relative">
         <div id="animation-container" class="absolute inset-0 pointer-events-none"></div>
-        <div id="player-info-panel" class="w-1/4 panel-bg rounded-lg p-4 flex flex-col space-y-4 overflow-y-auto border border-gray-700"></div>
-        <div class="w-3/4 flex items-center justify-center">
+        <div class="w-full md:w-2/3 lg:w-3/4 flex items-center justify-center h-full">
             <div id="game-board" class="board-bg p-2 relative">
                 <div id="center-console" class="rounded-lg flex flex-col items-center justify-center p-4">
                     <h2 class="text-2xl font-bold mb-4 text-gray-100">Control Center</h2>
@@ -186,8 +207,8 @@
                         <div id="dice2" class="dice bg-gray-200 rounded-lg flex items-center justify-center p-2 border border-gray-400"></div>
                     </div>
                     <div class="flex space-x-2 mb-4">
-                        <button id="roll-dice-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-xl shadow-lg">Roll Dice</button>
-                        <button id="manage-prop-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-xl shadow-lg">Manage</button>
+                        <button id="roll-dice-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 md:py-3 md:px-6 rounded-lg text-base md:text-xl shadow-lg">Roll Dice</button>
+                        <button id="manage-prop-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 md:py-3 md:px-6 rounded-lg text-base md:text-xl shadow-lg">Manage</button>
                     </div>
                      <div class="flex items-center space-x-2">
                         <span class="text-sm font-semibold">Speed:</span>
@@ -201,6 +222,7 @@
                 </div>
             </div>
         </div>
+        <div id="player-info-panel" class="w-full md:w-1/3 lg:w-1/4 order-first md:order-last panel-bg rounded-lg p-4 flex flex-col space-y-4 overflow-y-auto border border-gray-700 h-1/2 md:h-auto max-h-[45vh] md:max-h-full"></div>
     </div>
     
     <!-- Modal -->
@@ -269,12 +291,6 @@
         }
 
         function playSound(soundName) { if (audioReady && !Tone.Master.mute && sfx[soundName]) { sfx[soundName](); } }
-
-        document.getElementById('mute-btn').addEventListener('click', () => {
-            Tone.Master.mute = !Tone.Master.mute;
-            document.getElementById('mute-btn').textContent = Tone.Master.mute ? '🔇' : '🔊';
-            if (!Tone.Master.mute && backgroundMusic.state !== 'started') { backgroundMusic.start(0); }
-        });
 
         // --- GAME DATA (Bangkok Theme) ---
         const boardSpaces = [
@@ -366,20 +382,20 @@
 
         // --- DOM ELEMENTS ---
         const setupScreen = document.getElementById('setup-screen');
-        const gameContainer = document.getElementById('game-container');
-        const animationContainer = document.getElementById('animation-container');
-        const playerInfoPanel = document.getElementById('player-info-panel');
-        const gameBoard = document.getElementById('game-board');
-        const rollDiceBtn = document.getElementById('roll-dice-btn');
-        const managePropBtn = document.getElementById('manage-prop-btn');
-        const diceContainer = [document.getElementById('dice1'), document.getElementById('dice2')];
-        const turnIndicator = document.getElementById('turn-indicator');
-        const modal = document.getElementById('modal');
-        const modalTitle = document.getElementById('modal-title');
-        const modalBody = document.getElementById('modal-body');
-        const modalButtons = document.getElementById('modal-buttons');
-        const winScreen = document.getElementById('win-screen');
-        const loseScreen = document.getElementById('lose-screen');
+        let gameContainer;
+        let animationContainer;
+        let playerInfoPanel;
+        let gameBoard;
+        let rollDiceBtn;
+        let managePropBtn;
+        let diceContainer;
+        let turnIndicator;
+        let modal;
+        let modalTitle;
+        let modalBody;
+        let modalButtons;
+        let winScreen;
+        let loseScreen;
 
         // --- INITIALIZATION ---
         async function startGame(aiCount) {
@@ -388,6 +404,50 @@
                 initAudio();
                 backgroundMusic.start(0);
             }
+            
+            // Define DOM elements after game starts
+            gameContainer = document.getElementById('game-container');
+            animationContainer = document.getElementById('animation-container');
+            playerInfoPanel = document.getElementById('player-info-panel');
+            gameBoard = document.getElementById('game-board');
+            rollDiceBtn = document.getElementById('roll-dice-btn');
+            managePropBtn = document.getElementById('manage-prop-btn');
+            diceContainer = [document.getElementById('dice1'), document.getElementById('dice2')];
+            turnIndicator = document.getElementById('turn-indicator');
+            modal = document.getElementById('modal');
+            modalTitle = document.getElementById('modal-title');
+            modalBody = document.getElementById('modal-body');
+            modalButtons = document.getElementById('modal-buttons');
+            winScreen = document.getElementById('win-screen');
+            loseScreen = document.getElementById('lose-screen');
+
+            document.getElementById('mute-btn').addEventListener('click', () => {
+                Tone.Master.mute = !Tone.Master.mute;
+                document.getElementById('mute-btn').textContent = Tone.Master.mute ? '🔇' : '🔊';
+                if (!Tone.Master.mute && backgroundMusic.state !== 'started') { backgroundMusic.start(0); }
+            });
+
+            rollDiceBtn.addEventListener('click', () => {
+                if (players[currentPlayerIndex].isAI) return;
+                rollDiceBtn.disabled = true;
+                managePropBtn.disabled = true;
+                rollDiceBtn.classList.add('opacity-50');
+                managePropBtn.classList.add('opacity-50');
+                const d1 = Math.floor(Math.random() * 6) + 1;
+                const d2 = Math.floor(Math.random() * 6) + 1;
+                animateDice(d1, d2, () => movePlayer(d1 + d2));
+            });
+
+            managePropBtn.addEventListener('click', () => { if(!players[currentPlayerIndex].isAI) showManagePropertiesModal(players[currentPlayerIndex]); });
+
+            playerInfoPanel.addEventListener('click', (e) => {
+                const propLi = e.target.closest('.tradeable-property');
+                if (propLi && !players[currentPlayerIndex].isAI) {
+                    const ownerId = parseInt(propLi.dataset.ownerId);
+                    const propName = propLi.dataset.propName;
+                    initiateHumanToAITrade(ownerId, propName);
+                }
+            });
 
             const playerName = document.getElementById('player-name').value || 'You';
             const playerEmoji = document.getElementById('emoji-selector').value;
@@ -502,17 +562,6 @@
             const d2 = Math.floor(Math.random() * 6) + 1;
             animateDice(d1, d2, () => movePlayer(d1 + d2));
         }
-
-        rollDiceBtn.addEventListener('click', () => {
-            if (players[currentPlayerIndex].isAI) return;
-            rollDiceBtn.disabled = true;
-            managePropBtn.disabled = true;
-            rollDiceBtn.classList.add('opacity-50');
-            managePropBtn.classList.add('opacity-50');
-            const d1 = Math.floor(Math.random() * 6) + 1;
-            const d2 = Math.floor(Math.random() * 6) + 1;
-            animateDice(d1, d2, () => movePlayer(d1 + d2));
-        });
 
         // --- PLAYER MOVEMENT & ACTIONS ---
         function updatePlayerTokenPosition(player, animate = true) {
@@ -880,8 +929,6 @@
             if (activePlayers.length === 1 && !activePlayers[0].isAI) { triggerWin(); } else { triggerLose(); }
         }
         
-        managePropBtn.addEventListener('click', () => { if(!players[currentPlayerIndex].isAI) showManagePropertiesModal(players[currentPlayerIndex]); });
-
         function animateDice(d1, d2, callback) {
             playSound('dice');
             let count = 0;
@@ -1076,7 +1123,7 @@
 
         function showMoneyAnimation(playerId, amount) {
             const playerCard = document.getElementById(`player-info-${playerId}`);
-            if (!playerCard) return;
+            if (!playerCard || !animationContainer) return;
             const animEl = document.createElement('div');
             animEl.className = 'money-animation';
             const plus = amount > 0 ? '+' : '';
@@ -1094,15 +1141,6 @@
         function triggerLose() { playSound('lose'); gameActive = false; loseScreen.classList.remove('hidden'); loseScreen.classList.add('flex'); }
 
         // --- Trading Logic ---
-        playerInfoPanel.addEventListener('click', (e) => {
-            const propLi = e.target.closest('.tradeable-property');
-            if (propLi && !players[currentPlayerIndex].isAI) {
-                const ownerId = parseInt(propLi.dataset.ownerId);
-                const propName = propLi.dataset.propName;
-                initiateHumanToAITrade(ownerId, propName);
-            }
-        });
-
         function executeTrade(buyer, seller, property, price) {
             if (buyer.money < price) { if (!buyer.isAI) { playSound('error'); showAutoModal("Trade Failed", "You cannot afford this trade.", 1500); } return; }
             const propIndex = seller.properties.findIndex(p => p.name === property.name);
