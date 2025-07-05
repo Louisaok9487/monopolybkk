@@ -146,31 +146,42 @@
         
         /* Responsive Adjustments for Mobile */
         @media (max-width: 767px) {
-            #game-board {
+            body.mobile-mode #game-board {
                 grid-template-columns: 50px repeat(9, 1fr) 50px;
                 grid-template-rows: 50px repeat(9, 1fr) 50px;
                 gap: 1px;
             }
-            .property-card, .corner, .special-card {
+             body.mobile-mode .property-card, body.mobile-mode .corner, body.mobile-mode .special-card {
                 font-size: 0.45rem;
                 line-height: 1;
             }
-            .property-card .name { padding: 1px; }
-            .special-card .emoji, .corner .emoji { font-size: 1.2rem; }
-            .player-token { width: 28px; height: 28px; font-size: 20px; border-width: 1px; }
-            #center-console h2 { font-size: 1.25rem; margin-bottom: 0.5rem; }
-            .dice { width: 40px; height: 40px; }
-            .dot { width: 8px; height: 8px; }
-            #center-console .flex { flex-wrap: wrap; justify-content: center; }
-            #roll-dice-btn, #manage-prop-btn { padding: 0.5rem 1rem; font-size: 1rem; }
-            .speed-btn { padding: 0.25rem 0.5rem; }
+             body.mobile-mode .property-card .name { padding: 1px; }
+             body.mobile-mode .special-card .emoji, body.mobile-mode .corner .emoji { font-size: 1.2rem; }
+             body.mobile-mode .player-token { width: 28px; height: 28px; font-size: 20px; border-width: 1px; }
+             body.mobile-mode #center-console h2 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+             body.mobile-mode .dice { width: 40px; height: 40px; }
+             body.mobile-mode .dot { width: 8px; height: 8px; }
+             body.mobile-mode #center-console .flex { flex-wrap: wrap; justify-content: center; }
+             body.mobile-mode #roll-dice-btn, body.mobile-mode #manage-prop-btn { padding: 0.5rem 1rem; font-size: 1rem; }
+             body.mobile-mode .speed-btn { padding: 0.25rem 0.5rem; }
         }
     </style>
 </head>
 <body class="h-full">
+    
+    <!-- Mode Selection Modal -->
+    <div id="mode-selection-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+        <div class="panel-bg rounded-lg shadow-2xl p-8 text-center">
+            <h2 class="text-2xl font-bold mb-6">選擇顯示模式</h2>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button onclick="selectMode('mobile')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg">手機模式 (Mobile)</button>
+                <button onclick="selectMode('desktop')" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg text-lg">桌機模式 (Desktop)</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Setup Screen -->
-    <div id="setup-screen" class="flex flex-col text-center p-8 panel-bg rounded-lg shadow-lg border border-gray-700 max-w-sm mx-auto my-auto">
+    <div id="setup-screen" class="hidden flex-col text-center p-8 panel-bg rounded-lg shadow-lg border border-gray-700 max-w-sm mx-auto my-auto">
         <h1 class="text-4xl font-bold mb-4 text-gray-100">Bangkok Monopoly</h1>
         <div class="mb-4">
             <label for="player-name" class="block text-lg mb-2">Enter your name:</label>
@@ -381,7 +392,7 @@
         const BASE_MOVE_DELAY = 150;
 
         // --- DOM ELEMENTS ---
-        const setupScreen = document.getElementById('setup-screen');
+        let setupScreen;
         let gameContainer;
         let animationContainer;
         let playerInfoPanel;
@@ -398,6 +409,27 @@
         let loseScreen;
 
         // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            setupScreen = document.getElementById('setup-screen');
+            if (window.innerWidth < 768) {
+                document.getElementById('mode-selection-modal').classList.remove('hidden');
+            } else {
+                selectMode('desktop');
+            }
+        });
+
+        function selectMode(mode) {
+            if (mode === 'desktop') {
+                document.querySelector('meta[name="viewport"]').setAttribute('content', 'width=1280');
+            } else {
+                document.body.classList.add('mobile-mode');
+            }
+            document.getElementById('mode-selection-modal').style.display = 'none';
+            setupScreen.classList.remove('hidden');
+            setupScreen.classList.add('flex');
+        }
+        window.selectMode = selectMode;
+
         async function startGame(aiCount) {
             if (!audioReady) {
                 await Tone.start();
@@ -603,11 +635,11 @@
                 if (player.position === 0 && stepsTaken < steps) {
                     updatePlayerMoney(player, 200, false);
                     showAutoModal("Passed GO", `${player.name} collected $200.`, 1200, () => {
-                         const hopInterval = BASE_MOVE_DELAY / (gameSpeed === 0.5 ? 1.0 : gameSpeed);
+                         const hopInterval = Math.max(20, BASE_MOVE_DELAY / gameSpeed);
                          setTimeout(moveOneStep, hopInterval);
                     });
                 } else {
-                    const hopInterval = BASE_MOVE_DELAY / (gameSpeed === 0.5 ? 1.0 : gameSpeed);
+                    const hopInterval = Math.max(20, BASE_MOVE_DELAY / gameSpeed);
                     setTimeout(moveOneStep, hopInterval);
                 }
             }
