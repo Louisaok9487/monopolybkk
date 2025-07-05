@@ -465,7 +465,7 @@
                 players.push({ id: i + 1, name: playerNames[i + 1], isAI: true, money: 1500, position: 0, properties: [], inJail: false, jailTurns: 0, token: aiEmojis[i], color: playerColors[i+1], isBankrupt: false, getOutOfJailFreeCards: 0 });
             }
 
-            setupScreen.style.display = 'none';
+            document.getElementById('setup-screen').style.display = 'none';
             gameContainer.classList.remove('hidden');
             gameContainer.classList.add('flex');
             createBoard();
@@ -1238,46 +1238,64 @@
         const fireworksCtx = fireworksCanvas.getContext('2d');
         let fireworks = [];
         let particles = [];
+        let animationFrameId;
+
         function startFireworks() {
             fireworksCanvas.width = window.innerWidth;
             fireworksCanvas.height = window.innerHeight;
-            function createFirework() {
-                if(!gameActive) {
-                    fireworks.push(new Firework(Math.random() * fireworksCanvas.width, fireworksCanvas.height, Math.random() * fireworksCanvas.width, Math.random() * (fireworksCanvas.height / 2)));
-                    requestAnimationFrame(createFirework);
-                }
+            
+            // Launch a few fireworks initially
+            for(let i = 0; i < 5; i++) {
+                fireworks.push(new Firework(Math.random() * fireworksCanvas.width, fireworksCanvas.height, Math.random() * fireworksCanvas.width, Math.random() * (fireworksCanvas.height / 2)));
             }
-            function animate() {
-                if(!gameActive) {
-                    requestAnimationFrame(animate);
-                    fireworksCtx.fillStyle = 'rgba(13, 27, 42, 0.1)';
-                    fireworksCtx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
-                    fireworks.forEach((fw, i) => {
-                        fw.update();
-                        fw.draw();
-                        if (fw.done) {
-                            for (let i = 0; i < 50; i++) { particles.push(new Particle(fw.x, fw.y, fw.color)); }
-                            fireworks.splice(i, 1);
-                        }
-                    });
-                    particles.forEach((p, i) => {
-                        p.update();
-                        p.draw();
-                        if (p.alpha <= 0) { particles.splice(i, 1); }
-                    });
-                }
+            
+            // Stop any previous animation loop
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
             }
-            setTimeout(createFirework, 500);
             animate();
         }
+
+        function animate() {
+            if(!gameActive) {
+                animationFrameId = requestAnimationFrame(animate);
+                fireworksCtx.fillStyle = 'rgba(13, 27, 42, 0.15)';
+                fireworksCtx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+                
+                // Add a new firework occasionally
+                if(Math.random() < 0.05) {
+                     fireworks.push(new Firework(Math.random() * fireworksCanvas.width, fireworksCanvas.height, Math.random() * fireworksCanvas.width, Math.random() * (fireworksCanvas.height / 2)));
+                }
+
+                for(let i = fireworks.length - 1; i >= 0; i--) {
+                    fireworks[i].update();
+                    fireworks[i].draw();
+                    if (fireworks[i].done) {
+                        // Create a smaller, more optimized explosion
+                        for (let j = 0; j < 30; j++) { 
+                            particles.push(new Particle(fireworks[i].x, fireworks[i].y, fireworks[i].color));
+                        }
+                        fireworks.splice(i, 1);
+                    }
+                }
+
+                for(let i = particles.length - 1; i >= 0; i--) {
+                    particles[i].update();
+                    particles[i].draw();
+                    if (particles[i].alpha <= 0) {
+                        particles.splice(i, 1);
+                    }
+                }
+            }
+        }
         class Particle {
-            constructor(x, y, color) { this.x = x; this.y = y; this.color = color; this.velocity = { x: (Math.random() - 0.5) * 8, y: (Math.random() - 0.5) * 8 }; this.alpha = 1; this.friction = 0.98; }
-            draw() { fireworksCtx.save(); fireworksCtx.globalAlpha = this.alpha; fireworksCtx.beginPath(); fireworksCtx.arc(this.x, this.y, 2, 0, Math.PI * 2, false); fireworksCtx.fillStyle = this.color; fireworksCtx.fill(); fireworksCtx.restore(); }
-            update() { this.velocity.x *= this.friction; this.velocity.y *= this.friction; this.x += this.velocity.x; this.y += this.velocity.y; this.alpha -= 0.02; }
+            constructor(x, y, color) { this.x = x; this.y = y; this.color = color; this.velocity = { x: (Math.random() - 0.5) * 6, y: (Math.random() - 0.5) * 6 }; this.alpha = 1; this.friction = 0.98; }
+            draw() { fireworksCtx.save(); fireworksCtx.globalAlpha = this.alpha; fireworksCtx.beginPath(); fireworksCtx.arc(this.x, this.y, 1.5, 0, Math.PI * 2, false); fireworksCtx.fillStyle = this.color; fireworksCtx.fill(); fireworksCtx.restore(); }
+            update() { this.velocity.x *= this.friction; this.velocity.y *= this.friction; this.x += this.velocity.x; this.y += this.velocity.y; this.alpha -= 0.025; }
         }
         class Firework {
-            constructor(x, y, targetX, targetY) { this.x = x; this.y = y; this.targetX = targetX; this.targetY = targetY; this.color = `hsl(${Math.random() * 360}, 50%, 50%)`; this.velocity = { x: 0, y: 0 }; this.done = false; this.speed = Math.random() * 2 + 3; }
-            draw() { fireworksCtx.beginPath(); fireworksCtx.arc(this.x, this.y, 3, 0, Math.PI * 2, false); fireworksCtx.fillStyle = this.color; fireworksCtx.fill(); }
+            constructor(x, y, targetX, targetY) { this.x = x; this.y = y; this.targetX = targetX; this.targetY = targetY; this.color = `hsl(${Math.random() * 360}, 100%, 60%)`; this.velocity = { x: 0, y: 0 }; this.done = false; this.speed = Math.random() * 2 + 3; }
+            draw() { fireworksCtx.beginPath(); fireworksCtx.arc(this.x, this.y, 2.5, 0, Math.PI * 2, false); fireworksCtx.fillStyle = this.color; fireworksCtx.fill(); }
             update() { const angle = Math.atan2(this.targetY - this.y, this.targetX - this.x); this.velocity.x = Math.cos(angle) * this.speed; this.velocity.y = Math.sin(angle) * this.speed; this.x += this.velocity.x; this.y += this.velocity.y; if (Math.hypot(this.targetX - this.x, this.targetY - this.y) < this.speed) { this.done = true; } }
         }
     </script>
