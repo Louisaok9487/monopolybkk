@@ -180,18 +180,6 @@
         </div>
     </div>
 
-    <!-- Load Game Modal -->
-    <div id="load-game-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
-        <div class="panel-bg rounded-lg shadow-2xl p-8 text-center">
-            <h2 class="text-2xl font-bold mb-6">Game Save Found!</h2>
-            <p class="mb-6">Do you want to continue your previous game or start a new one?</p>
-            <div class="flex flex-col sm:flex-row gap-4">
-                <button onclick="continueGame()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg">Continue Game</button>
-                <button onclick="startNewGame()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg text-lg">Start New Game</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Setup Screen -->
     <div id="setup-screen" class="hidden flex-col text-center p-8 panel-bg rounded-lg shadow-lg border border-gray-700 max-w-sm mx-auto my-auto">
         <h1 class="text-4xl font-bold mb-4 text-gray-100">Bangkok Monopoly</h1>
@@ -212,9 +200,9 @@
         </div>
         <p class="text-lg mb-2">Select number of AI players:</p>
         <div class="flex justify-center space-x-4">
-            <button onclick="startGame(1, false)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">1</button>
-            <button onclick="startGame(2, false)" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">2</button>
-            <button onclick="startGame(3, false)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">3</button>
+            <button onclick="startGame(1)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">1</button>
+            <button onclick="startGame(2)" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">2</button>
+            <button onclick="startGame(3)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">3</button>
         </div>
     </div>
 
@@ -402,7 +390,6 @@
         let gameActive = true;
         let gameSpeed = 1.0;
         const BASE_MOVE_DELAY = 150;
-        let autoSaveInterval; // Variable to hold the auto-save interval
 
         // --- DOM ELEMENTS ---
         let setupScreen;
@@ -420,13 +407,10 @@
         let modalButtons;
         let winScreen;
         let loseScreen;
-        let loadGameModal;
 
         // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
             setupScreen = document.getElementById('setup-screen');
-            loadGameModal = document.getElementById('load-game-modal');
-
             if (window.innerWidth < 768) {
                 document.getElementById('mode-selection-modal').classList.remove('hidden');
             } else {
@@ -441,34 +425,12 @@
                 document.body.classList.add('mobile-mode');
             }
             document.getElementById('mode-selection-modal').style.display = 'none';
-            
-            // Check for saved game after mode selection
-            if (localStorage.getItem('bangkokMonopolySave')) {
-                loadGameModal.classList.remove('hidden');
-                loadGameModal.classList.add('flex');
-            } else {
-                setupScreen.classList.remove('hidden');
-                setupScreen.classList.add('flex');
-            }
-        }
-        window.selectMode = selectMode;
-
-        function continueGame() {
-            loadGameModal.classList.add('hidden');
-            startGame(0, true); // Pass true to load saved game
-        }
-        window.continueGame = continueGame;
-
-        function startNewGame() {
-            localStorage.removeItem('bangkokMonopolySave'); // Clear any existing save
-            loadGameModal.classList.add('hidden');
             setupScreen.classList.remove('hidden');
             setupScreen.classList.add('flex');
         }
-        window.startNewGame = startNewGame;
+        window.selectMode = selectMode;
 
-
-        async function startGame(aiCount, loadSavedGame) {
+        async function startGame(aiCount) {
             if (!audioReady) {
                 await Tone.start();
                 initAudio();
@@ -519,24 +481,20 @@
                 }
             });
 
-            if (loadSavedGame) {
-                loadGame();
-            } else {
-                const playerName = document.getElementById('player-name').value || 'You';
-                const playerEmoji = document.getElementById('emoji-selector').value;
+            const playerName = document.getElementById('player-name').value || 'You';
+            const playerEmoji = document.getElementById('emoji-selector').value;
 
-                let allEmojis = ["🛺", "🐘", "🥭", "🥊", "🏯", "🛵", "🤖", "👾", "👽"];
-                let aiEmojis = allEmojis.filter(e => e !== playerEmoji);
-                
-                players = [];
-                const playerNames = [playerName, 'Somchai (AI)', 'Malee (AI)', 'Pravit (AI)'];
-                const playerColors = ['#e53e3e', '#4299e1', '#48bb78', '#ecc94b'];
-                
-                players.push({ id: 0, name: playerNames[0], isAI: false, money: 1500, position: 0, properties: [], inJail: false, jailTurns: 0, token: playerEmoji, color: playerColors[0], isBankrupt: false, getOutOfJailFreeCards: 0 });
-                
-                for (let i = 0; i < aiCount; i++) {
-                    players.push({ id: i + 1, name: playerNames[i + 1], isAI: true, money: 1500, position: 0, properties: [], inJail: false, jailTurns: 0, token: aiEmojis[i], color: playerColors[i+1], isBankrupt: false, getOutOfJailFreeCards: 0 });
-                }
+            let allEmojis = ["🛺", "🐘", "🥭", "🥊", "🏯", "🛵", "🤖", "👾", "👽"];
+            let aiEmojis = allEmojis.filter(e => e !== playerEmoji);
+            
+            players = [];
+            const playerNames = [playerName, 'Somchai (AI)', 'Malee (AI)', 'Pravit (AI)'];
+            const playerColors = ['#e53e3e', '#4299e1', '#48bb78', '#ecc94b'];
+            
+            players.push({ id: 0, name: playerNames[0], isAI: false, money: 1500, position: 0, properties: [], inJail: false, jailTurns: 0, token: playerEmoji, color: playerColors[0], isBankrupt: false, getOutOfJailFreeCards: 0 });
+            
+            for (let i = 0; i < aiCount; i++) {
+                players.push({ id: i + 1, name: playerNames[i + 1], isAI: true, money: 1500, position: 0, properties: [], inJail: false, jailTurns: 0, token: aiEmojis[i], color: playerColors[i+1], isBankrupt: false, getOutOfJailFreeCards: 0 });
             }
 
             document.getElementById('setup-screen').style.display = 'none';
@@ -548,10 +506,6 @@
             updatePlayerInfoPanel();
             updateAllUI();
             startTurn();
-
-            // Start auto-save interval
-            if (autoSaveInterval) clearInterval(autoSaveInterval); // Clear any previous interval
-            autoSaveInterval = setInterval(saveGame, 60 * 1000); // Save every 60 seconds
         }
         window.startGame = startGame;
 
@@ -626,7 +580,7 @@
 
         function nextTurn() {
             if (!gameActive) return;
-            modal.classList.add('hidden'); // Ensure modal is hidden before next turn
+            modal.classList.add('hidden');
             
             const activePlayers = players.filter(p => !p.isBankrupt);
             if (activePlayers.length <= 1) {
@@ -677,16 +631,14 @@
 
             function moveOneStep() {
                 if (stepsTaken >= steps) {
-                    handleLandedSpace(player);
+                    handleLandedSpace();
                     return;
                 }
                 stepsTaken++;
-                const oldPosition = player.position;
                 player.position = (player.position + 1) % boardSpaces.length;
                 updatePlayerTokenPosition(player);
 
-                // Check if passing GO (only if not starting at GO and actually moving past it)
-                if (player.position === 0 && stepsTaken < steps && oldPosition !== 0) { 
+                if (player.position === 0 && stepsTaken < steps) {
                     updatePlayerMoney(player, 200, false);
                     showAutoModal("Passed GO", `${player.name} collected $200.`, 1200, () => {
                          const hopInterval = Math.max(20, BASE_MOVE_DELAY / gameSpeed);
@@ -700,14 +652,15 @@
             moveOneStep();
         }
 
-        function handleLandedSpace(player) {
-            modal.classList.add('hidden'); // Ensure modal is hidden before next action
+        function handleLandedSpace() {
+            modal.classList.add('hidden');
+            const player = players[currentPlayerIndex];
             const space = boardSpaces[player.position];
             const owner = getPropertyOwner(space);
             if (space.type === "property" || space.type === "station" || space.type === "utility") {
                 if (!owner) promptBuyProperty(player, space);
                 else if (owner.id !== player.id) payRent(player, space, owner);
-                else nextTurn(); // Owned by current player, just move to next turn
+                else nextTurn();
             } else {
                 handleSpecialSpace(player, space);
             }
@@ -771,30 +724,22 @@
 
         function buyProperty(player, space) {
             playSound('buy');
-            // Store only the name and houses, other properties will be looked up from boardSpaces
-            player.properties.push({ name: space.name, houses: 0 }); 
+            player.properties.push({...space, houses: 0});
             updatePlayerMoney(player, -space.price, true);
             if(player.isBankrupt) return;
             updateAllUI();
         }
 
         function payRent(player, space, owner) {
-            // Find the full property object from the owner's properties, which are linked to boardSpaces
-            const ownedPropertyFull = owner.properties.find(p => p.name === space.name);
-            if (!ownedPropertyFull) { // Should not happen if owner is found
-                console.error("Owned property not found for rent calculation.");
-                nextTurn();
-                return;
-            }
-
-            let rent = ownedPropertyFull.rent;
-            if (ownedPropertyFull.type === 'property' && hasFullSet(owner, ownedPropertyFull.group)) {
-                rent = ownedPropertyFull.houses > 0 ? ownedPropertyFull.rentWithHouses[ownedPropertyFull.houses - 1] : ownedPropertyFull.rent * 2;
-            } else if (ownedPropertyFull.type === 'utility') {
+            const ownedProperty = owner.properties.find(p => p.name === space.name);
+            let rent = ownedProperty.rent;
+            if (ownedProperty.type === 'property' && hasFullSet(owner, ownedProperty.group)) {
+                rent = ownedProperty.houses > 0 ? ownedProperty.rentWithHouses[ownedProperty.houses - 1] : ownedProperty.rent * 2;
+            } else if (ownedProperty.type === 'utility') {
                 const diceRoll = (Math.floor(Math.random() * 6) + 1) + (Math.floor(Math.random() * 6) + 1);
                 rent = diceRoll * (owner.properties.filter(p => p.type === 'utility').length === 2 ? 10 : 4);
-            } else if (ownedPropertyFull.type === 'station') {
-                rent = ownedPropertyFull.rent * Math.pow(2, owner.properties.filter(p => p.type === 'station').length - 1);
+            } else if (ownedProperty.type === 'station') {
+                rent = ownedProperty.rent * Math.pow(2, owner.properties.filter(p => p.type === 'station').length - 1);
             }
             
             const message = `${player.name} paid $${rent} rent to ${owner.name} for ${space.name}.`;
@@ -809,13 +754,11 @@
             let raised = 0;
             while (player.money < 0) {
                 let soldSomething = false;
-                // Properties with houses (need to get full property data for houseCost)
-                let propertiesWithHouses = player.properties.filter(p => p.houses > 0).map(p => ({...p, ...boardSpaces.find(s => s.name === p.name)})).sort((a,b) => b.houseCost - a.houseCost);
+                let propertiesWithHouses = player.properties.filter(p => p.houses > 0).sort((a,b) => b.houseCost - a.houseCost);
                 if (propertiesWithHouses.length > 0) {
                     const propToSellFrom = propertiesWithHouses[0];
                     const sellPrice = propToSellFrom.houseCost / 2;
-                    // Update the houses count on the actual player's property object
-                    player.properties.find(p => p.name === propToSellFrom.name).houses--;
+                    propToSellFrom.houses--;
                     player.money += sellPrice;
                     raised += sellPrice;
                     soldSomething = true;
@@ -823,35 +766,15 @@
                     continue;
                 }
 
-                // Properties without houses or utilities/stations
                 if (player.properties.length > 0) {
-                    let propToSell = player.properties.filter(p => {
-                        const fullProp = boardSpaces.find(s => s.name === p.name);
-                        return !fullProp.group || !hasFullSet(player, fullProp.group) || p.houses === 0; // Can sell if no houses, or if it's not part of a full set with houses
-                    }).map(p => ({...p, ...boardSpaces.find(s => s.name === p.name)})).sort((a,b) => a.price - b.price)[0];
-                    
-                    if (!propToSell) { // If all remaining properties are part of a full set with houses, try selling any property
-                         propToSell = player.properties.map(p => ({...p, ...boardSpaces.find(s => s.name === p.name)})).sort((a,b) => a.price - b.price)[0];
-                         if (propToSell && propToSell.houses > 0) { // If it has houses, sell a house first
-                            const sellPrice = propToSell.houseCost / 2;
-                            player.properties.find(p => p.name === propToSell.name).houses--;
-                            player.money += sellPrice;
-                            raised += sellPrice;
-                            soldSomething = true;
-                            updateAllUI();
-                            continue;
-                         }
-                    }
-
-                    if (propToSell) {
-                        const sellPrice = propToSell.price / 2;
-                        player.money += sellPrice;
-                        raised += sellPrice;
-                        player.properties = player.properties.filter(p => p.name !== propToSell.name);
-                        soldSomething = true;
-                        updateAllUI();
-                        continue;
-                    }
+                    let propToSell = player.properties.filter(p => !p.group || !hasFullSet(player, p.group)).sort((a,b) => a.price - b.price)[0] || player.properties.sort((a,b) => a.price - b.price)[0];
+                    const sellPrice = propToSell.price / 2;
+                    player.money += sellPrice;
+                    raised += sellPrice;
+                    player.properties = player.properties.filter(p => p.name !== propToSell.name);
+                    soldSomething = true;
+                    updateAllUI();
+                    continue;
                 }
                 if (!soldSomething) break;
             }
@@ -867,17 +790,14 @@
             playSound('lose');
             player.isBankrupt = true;
             document.getElementById(`player-${player.id}-token`).classList.add('hidden');
-            player.properties = []; // Player loses all properties
+            player.properties = [];
             showAutoModal("Bankrupt!", `<b>${player.name}</b> has gone bankrupt!`, 2000, nextTurn);
             updateAllUI();
         }
 
         // --- AI LOGIC ---
         async function manageAIProperties(player) {
-            // Map player's simplified properties to full property objects for AI logic
-            const fullProperties = player.properties.map(p => ({...p, ...boardSpaces.find(s => s.name === p.name)}));
-
-            const propertiesByGroup = fullProperties.filter(p => p.group).reduce((acc, p) => {
+            const propertiesByGroup = player.properties.filter(p => p.group).reduce((acc, p) => {
                 if (!acc[p.group]) acc[p.group] = [];
                 acc[p.group].push(p);
                 return acc;
@@ -889,14 +809,13 @@
                     const houseCost = group[0].houseCost;
                     while (player.money > houseCost * 2.5) {
                          const minHouses = Math.min(...group.map(p => p.houses));
-                         if (minHouses >= 5) break; // Max 5 houses (hotel)
+                         if (minHouses >= 5) break;
                          let propertyToBuildOn = group.find(p => p.houses === minHouses);
                          if (propertyToBuildOn) {
                              playSound('buy');
                              updatePlayerMoney(player, -houseCost, false);
-                             // Update the houses count on the actual player's property object
-                             player.properties.find(p => p.name === propertyToBuildOn.name).houses++;
-                             showAutoModal("AI Builds", `${player.name} built a ${propertyToBuildOn.houses + 1 === 5 ? 'hotel' : 'house'} on ${propertyToBuildOn.name}.`, 1200);
+                             propertyToBuildOn.houses++;
+                             showAutoModal("AI Builds", `${player.name} built a ${propertyToBuildOn.houses === 5 ? 'hotel' : 'house'} on ${propertyToBuildOn.name}.`, 1200);
                              updateAllUI();
                              await sleep(500);
                          } else { break; }
@@ -915,22 +834,23 @@
                     const targetProperty = boardSpaces.find(s => s.name === missingPropName);
                     const owner = players.find(p => p.isAI && p.id !== player.id && !p.isBankrupt && p.properties.some(prop => prop.name === missingPropName));
                     
-                    if (owner && !hasFullSet(owner, group.groupName)) { // AI won't trade if it completes their own set
+                    if (owner && !hasFullSet(owner, group.groupName)) {
                         const offerPrice = Math.round(targetProperty.price * (1.2 + Math.random() * 0.5));
                         
-                        // AI offers a trade
-                        showAutoModal("AI Trade Offer", `${player.name} offers to buy ${targetProperty.name} from ${owner.name} for $${offerPrice}.`, 1500, null, { modalType: 'trade' });
-                        await sleep(1500);
+                        if ((owner.money < 400 && offerPrice > targetProperty.price * 1.2) || offerPrice > targetProperty.price * 1.5) {
+                             showAutoModal("AI Trade Offer", `${player.name} offers to buy ${targetProperty.name} from ${owner.name} for $${offerPrice}.`, 1500, null, { modalType: 'trade' });
+                             await sleep(1500);
 
-                        const isGoodDealForOwner = offerPrice > targetProperty.price * 1.4 || (owner.money < 200 && offerPrice > targetProperty.price * 1.1);
-                        if (isGoodDealForOwner && player.money >= offerPrice) {
-                            executeTrade(player, owner, targetProperty, offerPrice);
-                            showAutoModal("Trade Accepted!", `${owner.name} sold ${targetProperty.name} to ${player.name} for $${offerPrice}.`, 1500, null, { modalType: 'trade' });
-                            await sleep(1500);
-                            return; // Only one trade per AI turn attempt
-                        } else {
-                            showAutoModal("Trade Rejected", `${owner.name} rejected the offer.`, 1200, null, { modalType: 'trade' });
-                            await sleep(1200);
+                             const isGoodDealForOwner = offerPrice > targetProperty.price * 1.4 || (owner.money < 200 && offerPrice > targetProperty.price * 1.1);
+                             if (isGoodDealForOwner && player.money >= offerPrice) {
+                                 executeTrade(player, owner, targetProperty, offerPrice);
+                                 showAutoModal("Trade Accepted!", `${owner.name} sold ${targetProperty.name} to ${player.name} for $${offerPrice}.`, 1500, null, { modalType: 'trade' });
+                                 await sleep(1500);
+                                 return;
+                             } else {
+                                 showAutoModal("Trade Rejected", `${owner.name} rejected the offer.`, 1200, null, { modalType: 'trade' });
+                                 await sleep(1200);
+                             }
                         }
                     }
                 }
@@ -951,21 +871,15 @@
                 playerDiv.id = `player-info-${player.id}`;
                 playerDiv.className = `player-info-card panel-bg border border-gray-700 p-3 rounded-lg shadow-md transition-all duration-300 relative ${player.isBankrupt ? 'opacity-50' : ''}`;
                 
-                // Map player's simplified properties to full property objects for display
-                const fullPropertiesForDisplay = player.properties.map(p => ({...p, ...boardSpaces.find(s => s.name === p.name)}));
-
-                const propertiesList = fullPropertiesForDisplay.sort((a,b) => (a.group || '').localeCompare(b.group || '')).map(p => {
+                const propertiesList = player.properties.sort((a,b) => (a.group || '').localeCompare(b.group || '')).map(p => {
                     let rentInfo = '';
                     if (p.type === 'property') {
                         let currentRent = p.houses > 0 ? p.rentWithHouses[p.houses - 1] : (hasFullSet(player, p.group) ? p.rent * 2 : p.rent);
                         rentInfo = `<span class="text-green-400 ml-auto">$${currentRent}</span>`;
                     } else if (p.type === 'station') {
-                        const numStations = player.properties.filter(prop => boardSpaces.find(s => s.name === prop.name).type === 'station').length;
+                        const numStations = player.properties.filter(prop => prop.type === 'station').length;
                         const currentRent = p.rent * Math.pow(2, numStations - 1);
                         rentInfo = `<span class="text-green-400 ml-auto">$${currentRent}</span>`;
-                    } else if (p.type === 'utility') {
-                         // Utility rent is dynamic based on dice roll and number of utilities, so display base rent or a range
-                         rentInfo = `<span class="text-green-400 ml-auto">x4/x10</span>`;
                     }
                     const tradeableClass = player.isAI && !players[0].isBankrupt ? 'tradeable-property' : '';
                     return `<li class="flex items-center text-sm p-1 rounded-md ${tradeableClass}" data-owner-id="${player.id}" data-prop-name="${p.name}">
@@ -983,7 +897,7 @@
                         <span class="text-xl font-semibold text-green-400">$${player.money}</span>
                     </div>
                     <div>
-                        <div class="flex justify-between font-semibold text-gray-400"><span class="underline">Properties</span><span class="underline">Rent/Info</span></div>
+                        <div class="flex justify-between font-semibold text-gray-400"><span class="underline">Properties</span><span class="underline">Rent</span></div>
                         <ul class="mt-1 space-y-1">${propertiesList || '<li class="text-sm text-gray-500">None</li>'}</ul>
                     </div>`;
                 playerInfoPanel.appendChild(playerDiv);
@@ -997,14 +911,13 @@
                     if (!spaceEl) return;
                     const owner = getPropertyOwner(space);
                     let colorBar = spaceEl.querySelector('.color-bar');
-                    // For stations and utilities, add a color bar if it doesn't exist
-                    if (!colorBar && (space.type === 'station' || space.type === 'utility')) {
+                    if (!colorBar && space.color) {
                          colorBar = document.createElement('div');
                          colorBar.className = 'color-bar';
-                         colorBar.style.backgroundColor = '#4a5568'; // Neutral color for stations/utilities
+                         colorBar.style.backgroundColor = space.color;
                          spaceEl.prepend(colorBar);
                     }
-                    if(colorBar) colorBar.innerHTML = ''; // Clear existing house indicators
+                    if(colorBar) colorBar.innerHTML = '';
                     const existingIndicator = spaceEl.querySelector('.owner-indicator');
                     if (existingIndicator) existingIndicator.remove();
                     if(owner) {
@@ -1033,16 +946,15 @@
         window.setGameSpeed = setGameSpeed;
         function hasFullSet(player, groupName) {
             if (!groupName) return false;
-            const groupProperties = player.properties.filter(p => boardSpaces.find(s => s.name === p.name).group === groupName);
+            const groupProperties = player.properties.filter(p => p.group === groupName);
             const totalInGroup = boardSpaces.filter(s => s.group === groupName).length;
             return groupProperties.length === totalInGroup;
         }
         function getPotentialMonopolies(player) {
             const groups = {};
-            player.properties.filter(p => boardSpaces.find(s => s.name === p.name).group).forEach(p => {
-                const groupName = boardSpaces.find(s => s.name === p.name).group;
-                if (!groups[groupName]) groups[groupName] = 0;
-                groups[groupName]++;
+            player.properties.filter(p => p.group).forEach(p => {
+                if (!groups[p.group]) groups[p.group] = 0;
+                groups[p.group]++;
             });
             const potential = [];
             for (const groupName in groups) {
@@ -1054,15 +966,13 @@
             return potential;
         }
         function getMissingProperties(player, groupName) {
-            const ownedProps = player.properties.filter(p => boardSpaces.find(s => s.name === p.name).group === groupName).map(p => p.name);
+            const ownedProps = player.properties.filter(p => p.group === groupName).map(p => p.name);
             const allPropsInGroup = boardSpaces.filter(s => s.group === groupName).map(s => s.name);
             return allPropsInGroup.filter(name => !ownedProps.includes(name));
         }
         function endGame(activePlayers) {
             gameActive = false;
             if (backgroundMusic) backgroundMusic.stop();
-            if (autoSaveInterval) clearInterval(autoSaveInterval); // Stop auto-save on game end
-            localStorage.removeItem('bangkokMonopolySave'); // Clear save on game end
             if (activePlayers.length === 1 && !activePlayers[0].isAI) { triggerWin(); } else { triggerLose(); }
         }
         
@@ -1155,19 +1065,15 @@
                 const originalPosition = player.position;
                 card.action(player, players);
                 if (player.isBankrupt) return;
-                // If player position changed (e.g., Advance to GO, Go to Jail), handle the new space
-                if (player.position !== originalPosition) { setTimeout(() => handleLandedSpace(player), 200 / gameSpeed); } 
-                else { nextTurn(); } // Otherwise, proceed to next turn
+                if (player.position !== originalPosition) { setTimeout(handleLandedSpace, 200 / gameSpeed); } 
+                else { nextTurn(); }
             };
             showAutoModal(type, displayText, 2000, cardAction);
         }
 
         function showManagePropertiesModal(player) {
             let bodyContent = '<div class="space-y-4">';
-            // Map player's simplified properties to full property objects for display
-            const fullProperties = player.properties.map(p => ({...p, ...boardSpaces.find(s => s.name === p.name)}));
-
-            const propertiesByGroup = fullProperties.filter(p => p.group).reduce((acc, p) => {
+            const propertiesByGroup = player.properties.filter(p => p.group).reduce((acc, p) => {
                 if (!acc[p.group]) acc[p.group] = [];
                 acc[p.group].push(p);
                 return acc;
@@ -1198,11 +1104,9 @@
             bodyContent += '<h4 class="text-xl font-bold border-b border-gray-600 pb-2 mt-6">Sell Properties</h4>';
             if(player.properties.length > 0) {
                 player.properties.forEach(p => {
-                    const fullProp = boardSpaces.find(s => s.name === p.name);
-                    const sellPrice = Math.floor(fullProp.price / 2);
-                    // Check if any property in the same group has houses
-                    const groupHasHouses = fullProp.group && fullProperties.filter(fp => fp.group === fullProp.group).some(prop => prop.houses > 0);
-                    const canSell = !groupHasHouses; // Can only sell if no houses in the group
+                    const sellPrice = Math.floor(p.price / 2);
+                    const groupHasHouses = p.group && propertiesByGroup[p.group] && propertiesByGroup[p.group].some(prop => prop.houses > 0);
+                    const canSell = !groupHasHouses;
                     bodyContent += `<div class="flex justify-between items-center p-2 rounded-md hover:bg-gray-700"><span>${p.name}</span><button ${canSell ? '' : 'disabled'} onclick="sellProperty('${p.name}')" class="py-1 px-3 rounded text-white font-semibold ${canSell ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 cursor-not-allowed'}" title="${canSell ? '' : 'Sell houses in this group first'}">Sell for $${sellPrice}</button></div>`;
                 });
             } else { bodyContent += "<p>You don't own any properties to sell.</p>"; }
@@ -1211,8 +1115,7 @@
         }
         window.buildHouse = (groupName) => {
             const player = players[currentPlayerIndex];
-            // Get player's simplified properties and map to full board space data
-            const propertyGroup = player.properties.filter(p => boardSpaces.find(s => s.name === p.name).group === groupName).map(p => ({...p, ...boardSpaces.find(s => s.name === p.name)}));
+            const propertyGroup = player.properties.filter(p => p.group === groupName);
             const houseCost = propertyGroup[0].houseCost;
             if (player.money < houseCost) { playSound('error'); return; }
             const minHouses = Math.min(...propertyGroup.map(p => p.houses));
@@ -1220,26 +1123,23 @@
             if (propertyToBuildOn && propertyToBuildOn.houses < 5) {
                 playSound('buy');
                 updatePlayerMoney(player, -houseCost, false);
-                // Update the houses count on the actual player's property object
-                player.properties.find(p => p.name === propertyToBuildOn.name).houses++;
+                propertyToBuildOn.houses++;
                 updateAllUI();
-                showManagePropertiesModal(player); // Re-open modal to show updated state
+                showManagePropertiesModal(player);
             }
         };
         window.sellHouse = (groupName) => {
             const player = players[currentPlayerIndex];
-            // Get player's simplified properties and map to full board space data
-            const propertyGroup = player.properties.filter(p => boardSpaces.find(s => s.name === p.name).group === groupName).map(p => ({...p, ...boardSpaces.find(s => s.name === p.name)}));
+            const propertyGroup = player.properties.filter(p => p.group === groupName);
             const houseCost = propertyGroup[0].houseCost;
             const maxHouses = Math.max(...propertyGroup.map(p => p.houses));
             if (maxHouses === 0) { playSound('error'); return; }
             let propertyToSellFrom = propertyGroup.find(p => p.houses === maxHouses);
             if(propertyToSellFrom) {
                 updatePlayerMoney(player, houseCost / 2, false);
-                // Update the houses count on the actual player's property object
-                player.properties.find(p => p.name === propertyToSellFrom.name).houses--;
+                propertyToSellFrom.houses--;
                 updateAllUI();
-                showManagePropertiesModal(player); // Re-open modal to show updated state
+                showManagePropertiesModal(player);
             }
         };
         window.sellProperty = (propertyName) => {
@@ -1247,8 +1147,7 @@
             const property = player.properties.find(p => p.name === propertyName);
             if (!property) return;
 
-            const fullProp = boardSpaces.find(s => s.name === property.name);
-            const sellPrice = Math.floor(fullProp.price / 2);
+            const sellPrice = Math.floor(property.price / 2);
             const body = `Are you sure you want to sell <b>${propertyName}</b> for <span class="text-green-400">$${sellPrice}</span>?`;
             
             showModal("Confirm Sale", body, [
@@ -1261,12 +1160,11 @@
             const propertyIndex = player.properties.findIndex(p => p.name === propertyName);
             if(propertyIndex > -1) {
                 const property = player.properties[propertyIndex];
-                const fullProp = boardSpaces.find(s => s.name === property.name);
-                const sellPrice = Math.floor(fullProp.price / 2);
+                const sellPrice = Math.floor(property.price / 2);
                 updatePlayerMoney(player, sellPrice, false);
                 player.properties.splice(propertyIndex, 1);
                 updateAllUI();
-                showManagePropertiesModal(player); // Re-open modal to show updated state
+                showManagePropertiesModal(player);
             }
         };
 
@@ -1294,8 +1192,8 @@
             if (buyer.money < price) { if (!buyer.isAI) { playSound('error'); showAutoModal("Trade Failed", "You cannot afford this trade.", 1500); } return; }
             const propIndex = seller.properties.findIndex(p => p.name === property.name);
             if (propIndex === -1) return;
-            const tradedProperty = seller.properties.splice(propIndex, 1)[0]; // Get the simplified property object
-            buyer.properties.push(tradedProperty); // Add the simplified property object
+            const tradedProperty = seller.properties.splice(propIndex, 1)[0];
+            buyer.properties.push(tradedProperty);
             playSound('buy');
             updatePlayerMoney(buyer, -price, !buyer.isAI);
             updatePlayerMoney(seller, price, false);
@@ -1306,23 +1204,19 @@
         function initiateHumanToAITrade(ownerId, propName) {
             const humanPlayer = players[0];
             const aiPlayer = players.find(p => p.id === ownerId);
-            // Get the full property object for calculations
-            const propertyToBuy = boardSpaces.find(s => s.name === propName);
-            const aiOwnedProperty = aiPlayer.properties.find(p => p.name === propName);
+            const propertyToBuy = aiPlayer.properties.find(p => p.name === propName);
 
-            if (!aiPlayer || !propertyToBuy || !aiOwnedProperty || humanPlayer.isBankrupt) return;
+            if (!aiPlayer || !propertyToBuy || humanPlayer.isBankrupt) return;
 
             let priceMarkup = 1.5;
             let reason = `${aiPlayer.name} considers your offer for ${propertyToBuy.name}...`;
 
-            // Check if AI player has a full set for this property
-            if (propertyToBuy.group && hasFullSet(aiPlayer, propertyToBuy.group)) {
+            if (hasFullSet(aiPlayer, propertyToBuy.group)) {
                 priceMarkup = 4.0;
                 reason = `${aiPlayer.name} is very reluctant to sell from a complete set!`;
             }
 
-            // Check if human player is close to a monopoly
-            const humanGroupProps = humanPlayer.properties.filter(p => boardSpaces.find(s => s.name === p.name).group === propertyToBuy.group).length;
+            const humanGroupProps = humanPlayer.properties.filter(p => p.group === propertyToBuy.group).length;
             const totalInGroup = boardSpaces.filter(s => s.group === propertyToBuy.group).length;
             if (humanGroupProps === totalInGroup - 1) {
                 priceMarkup = 3.0;
@@ -1334,7 +1228,7 @@
                 reason = `${aiPlayer.name} seems to need the cash...`;
             }
             
-            priceMarkup = Math.max(1.1, priceMarkup); // Ensure minimum markup
+            priceMarkup = Math.max(1.1, priceMarkup);
             const finalPrice = Math.round((propertyToBuy.price * priceMarkup) / 10) * 10;
             const canAfford = humanPlayer.money >= finalPrice;
 
@@ -1370,11 +1264,7 @@
         function generalRepairs(player, houseCost, hotelCost) {
             let totalCost = 0;
             player.properties.forEach(p => {
-                // Get full property data to check type and houses
-                const fullProp = boardSpaces.find(s => s.name === p.name);
-                if (fullProp.type === 'property' && p.houses > 0) { 
-                    totalCost += p.houses === 5 ? hotelCost : p.houses * houseCost; 
-                }
+                if (p.houses > 0) { totalCost += p.houses === 5 ? hotelCost : p.houses * houseCost; }
             });
             if (totalCost > 0) { updatePlayerMoney(player, -totalCost, true); }
         }
@@ -1389,66 +1279,6 @@
                 ]);
             }
         }
-
-        // --- Game Save/Load Functions ---
-        function saveGame() {
-            try {
-                const gameState = {
-                    players: players.map(p => ({
-                        id: p.id,
-                        name: p.name,
-                        isAI: p.isAI,
-                        money: p.money,
-                        position: p.position,
-                        // Save only property name and houses to keep it light
-                        properties: p.properties.map(prop => ({ name: prop.name, houses: prop.houses })),
-                        inJail: p.inJail,
-                        jailTurns: p.jailTurns,
-                        token: p.token,
-                        color: p.color,
-                        isBankrupt: p.isBankrupt,
-                        getOutOfJailFreeCards: p.getOutOfJailFreeCards
-                    })),
-                    currentPlayerIndex: currentPlayerIndex,
-                    gameActive: gameActive,
-                    gameSpeed: gameSpeed
-                };
-                localStorage.setItem('bangkokMonopolySave', JSON.stringify(gameState));
-                console.log('Game saved successfully!');
-            } catch (e) {
-                console.error('Error saving game:', e);
-            }
-        }
-        window.saveGame = saveGame; // Make it globally accessible for manual testing
-
-        function loadGame() {
-            try {
-                const savedState = localStorage.getItem('bangkokMonopolySave');
-                if (savedState) {
-                    const gameState = JSON.parse(savedState);
-                    
-                    players = gameState.players.map(savedPlayer => {
-                        // Reconstruct properties by merging saved data with boardSpaces data
-                        const reconstructedProperties = savedPlayer.properties.map(savedProp => {
-                            const fullSpaceData = boardSpaces.find(s => s.name === savedProp.name);
-                            return { ...fullSpaceData, houses: savedProp.houses };
-                        });
-                        return { ...savedPlayer, properties: reconstructedProperties };
-                    });
-                    currentPlayerIndex = gameState.currentPlayerIndex;
-                    gameActive = gameState.gameActive;
-                    gameSpeed = gameState.gameSpeed || 1.0; // Default to 1.0 if not saved
-
-                    console.log('Game loaded successfully!');
-                    return true;
-                }
-            } catch (e) {
-                console.error('Error loading game:', e);
-                localStorage.removeItem('bangkokMonopolySave'); // Clear corrupted save
-            }
-            return false;
-        }
-        window.loadGame = loadGame; // Make it globally accessible for manual testing
 
         // --- Fireworks ---
         const fireworksCanvas = document.getElementById('fireworks-canvas');
@@ -1474,7 +1304,7 @@
         }
 
         function animate() {
-            if(!gameActive) { // Only animate fireworks if game is not active (i.e., win screen)
+            if(!gameActive) {
                 animationFrameId = requestAnimationFrame(animate);
                 fireworksCtx.fillStyle = 'rgba(13, 27, 42, 0.15)';
                 fireworksCtx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
