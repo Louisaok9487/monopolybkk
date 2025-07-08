@@ -199,10 +199,18 @@
             </select>
         </div>
         <p class="text-lg mb-2">Select number of AI players:</p>
-        <div class="flex justify-center space-x-4">
-            <button onclick="startGame(1)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">1</button>
-            <button onclick="startGame(2)" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">2</button>
-            <button onclick="startGame(3)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">3</button>
+        <div class="flex justify-center space-x-4 mb-4">
+            <button onclick="setAICountAndShowDifficulty(1)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">1</button>
+            <button onclick="setAICountAndShowDifficulty(2)" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">2</button>
+            <button onclick="setAICountAndShowDifficulty(3)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">3</button>
+        </div>
+        <div id="difficulty-selection" class="hidden">
+            <p class="text-lg mb-2">Select difficulty level:</p>
+            <div class="flex justify-center space-x-4">
+                <button onclick="startGame(aiPlayersCount, 'easy')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Easy</button>
+                <button onclick="startGame(aiPlayersCount, 'intermediate')" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded">Intermediate</button>
+                <button onclick="startGame(aiPlayersCount, 'hell')" class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded">Hell</button>
+            </div>
         </div>
     </div>
 
@@ -348,7 +356,7 @@
         ];
         
         const chanceCards = [
-            { text: "Advance to GO (Collect $200)", action: (p) => { p.position = 0; updatePlayerMoney(p, 200, false); } },
+            { text: "Advance to GO (Collect $200)", action: (p) => { p.position = 0; updatePlayerMoney(p, 200, false); p.passedGoOnCard = true; } },
             { text: "Bank pays you dividend of $50", action: (p) => { updatePlayerMoney(p, 50, false); } },
             { text: "Go to Traffic Jam. Go directly to Jam.", action: (p) => { goToJail(p); } },
             { text: "Speeding fine $15", action: (p) => { updatePlayerMoney(p, -15, true); } },
@@ -381,7 +389,7 @@
             { text: "You won the lottery! Collect $100.", action: (p) => { updatePlayerMoney(p, 100, false); } },
             { text: "You inherit $100.", action: (p) => { updatePlayerMoney(p, 100, false); } },
             { text: "Pay a $10 fine or take a Chance card.", action: (p) => { payOrTakeChance(p, 10); } },
-            { text: "Advance to GO (Collect $200)", action: (p) => { p.position = 0; updatePlayerMoney(p, 200, false); } }
+            { text: "Advance to GO (Collect $200)", action: (p) => { p.position = 0; updatePlayerMoney(p, 200, false); p.passedGoOnCard = true; } }
         ];
 
         // --- GAME STATE ---
@@ -389,6 +397,9 @@
         let currentPlayerIndex = 0;
         let gameActive = true;
         let gameSpeed = 1.0;
+        let diceRollCount = 0;
+        let aiPlayersCount = 0; // To store selected AI count
+        let difficultyLevel = 'intermediate'; // Default difficulty
         const BASE_MOVE_DELAY = 150;
 
         // --- DOM ELEMENTS ---
@@ -416,6 +427,7 @@
             } else {
                 selectMode('desktop');
             }
+            checkSavedGame();
         });
 
         function selectMode(mode) {
@@ -430,7 +442,13 @@
         }
         window.selectMode = selectMode;
 
-        async function startGame(aiCount) {
+        function setAICountAndShowDifficulty(count) {
+            aiPlayersCount = count;
+            document.getElementById('difficulty-selection').classList.remove('hidden');
+        }
+        window.setAICountAndShowDifficulty = setAICountAndShowDifficulty;
+
+        async function startGame(aiCount, difficulty, savedGame = null) {
             if (!audioReady) {
                 await Tone.start();
                 initAudio();
@@ -481,20 +499,28 @@
                 }
             });
 
-            const playerName = document.getElementById('player-name').value || 'You';
-            const playerEmoji = document.getElementById('emoji-selector').value;
+            if (savedGame) {
+                players = savedGame.players;
+                currentPlayerIndex = savedGame.currentPlayerIndex;
+                diceRollCount = savedGame.diceRollCount || 0;
+                difficultyLevel = savedGame.difficultyLevel || 'intermediate';
+            } else {
+                difficultyLevel = difficulty;
+                const playerName = document.getElementById('player-name').value || 'You';
+                const playerEmoji = document.getElementById('emoji-selector').value;
 
-            let allEmojis = ["🛺", "🐘", "🥭", "🥊", "🏯", "🛵", "🤖", "👾", "👽"];
-            let aiEmojis = allEmojis.filter(e => e !== playerEmoji);
-            
-            players = [];
-            const playerNames = [playerName, 'Somchai (AI)', 'Malee (AI)', 'Pravit (AI)'];
-            const playerColors = ['#e53e3e', '#4299e1', '#48bb78', '#ecc94b'];
-            
-            players.push({ id: 0, name: playerNames[0], isAI: false, money: 1500, position: 0, properties: [], inJail: false, jailTurns: 0, token: playerEmoji, color: playerColors[0], isBankrupt: false, getOutOfJailFreeCards: 0 });
-            
-            for (let i = 0; i < aiCount; i++) {
-                players.push({ id: i + 1, name: playerNames[i + 1], isAI: true, money: 1500, position: 0, properties: [], inJail: false, jailTurns: 0, token: aiEmojis[i], color: playerColors[i+1], isBankrupt: false, getOutOfJailFreeCards: 0 });
+                let allEmojis = ["🛺", "🐘", "🥭", "🥊", "🏯", "🛵", "🤖", "👾", "👽"];
+                let aiEmojis = allEmojis.filter(e => e !== playerEmoji);
+                
+                players = [];
+                const playerNames = [playerName, 'Somchai (AI)', 'Malee (AI)', 'Pravit (AI)'];
+                const playerColors = ['#e53e3e', '#4299e1', '#48bb78', '#ecc94b'];
+                
+                players.push({ id: 0, name: playerNames[0], isAI: false, money: 1500, position: 0, properties: [], inJail: false, jailTurns: 0, token: playerEmoji, color: playerColors[0], isBankrupt: false, getOutOfJailFreeCards: 0, passedGoOnCard: false });
+                
+                for (let i = 0; i < aiCount; i++) {
+                    players.push({ id: i + 1, name: playerNames[i + 1], isAI: true, money: 1500, position: 0, properties: [], inJail: false, jailTurns: 0, token: aiEmojis[i], color: playerColors[i+1], isBankrupt: false, getOutOfJailFreeCards: 0, passedGoOnCard: false });
+                }
             }
 
             document.getElementById('setup-screen').style.display = 'none';
@@ -572,8 +598,10 @@
 
             if (currentPlayer.isAI) {
                 await sleep(500);
-                await manageAIProperties(currentPlayer);
-                await evaluateAITrades(currentPlayer);
+                if (difficultyLevel !== 'easy') { // AI only trades on Intermediate and Hell
+                    await manageAIProperties(currentPlayer);
+                    await evaluateAITrades(currentPlayer);
+                }
                 aiTurn();
             }
         }
@@ -596,6 +624,8 @@
         }
 
         function aiTurn() {
+            diceRollCount++; // Increment dice roll count for AI turns as well
+            saveGame(); // Attempt to save game
             const d1 = Math.floor(Math.random() * 6) + 1;
             const d2 = Math.floor(Math.random() * 6) + 1;
             animateDice(d1, d2, () => movePlayer(d1 + d2));
@@ -628,6 +658,7 @@
         function movePlayer(steps) {
             const player = players[currentPlayerIndex];
             let stepsTaken = 0;
+            const originalPosition = player.position;
 
             function moveOneStep() {
                 if (stepsTaken >= steps) {
@@ -638,7 +669,8 @@
                 player.position = (player.position + 1) % boardSpaces.length;
                 updatePlayerTokenPosition(player);
 
-                if (player.position === 0 && stepsTaken < steps) {
+                // Check for passing GO
+                if (player.position === 0 && stepsTaken < steps && !player.passedGoOnCard) {
                     updatePlayerMoney(player, 200, false);
                     showAutoModal("Passed GO", `${player.name} collected $200.`, 1200, () => {
                          const hopInterval = Math.max(20, BASE_MOVE_DELAY / gameSpeed);
@@ -649,6 +681,7 @@
                     setTimeout(moveOneStep, hopInterval);
                 }
             }
+            player.passedGoOnCard = false; // Reset for next turn
             moveOneStep();
         }
 
@@ -657,6 +690,14 @@
             const player = players[currentPlayerIndex];
             const space = boardSpaces[player.position];
             const owner = getPropertyOwner(space);
+
+            // Special handling for landing on GO
+            if (space.type === "go") {
+                updatePlayerMoney(player, 200, false);
+                showAutoModal("Landed on GO", `${player.name} collected $200.`, 1200, nextTurn);
+                return;
+            }
+
             if (space.type === "property" || space.type === "station" || space.type === "utility") {
                 if (!owner) promptBuyProperty(player, space);
                 else if (owner.id !== player.id) payRent(player, space, owner);
@@ -708,7 +749,15 @@
                 return;
             }
             if (player.isAI) {
-                if (player.money - space.price > 150 || Math.random() < 0.85) {
+                // AI decision to buy property based on difficulty
+                let buyThreshold = 150; // default for Intermediate
+                if (difficultyLevel === 'easy') {
+                    buyThreshold = 50; // Easy AI is less aggressive
+                } else if (difficultyLevel === 'hell') {
+                    buyThreshold = 300; // Hell AI is more aggressive
+                }
+
+                if (player.money - space.price > buyThreshold || Math.random() < 0.85) {
                     buyProperty(player, space);
                     showAutoModal("AI Purchase", `${player.name} bought ${space.name} for $${space.price}.`, 1200, nextTurn);
                 } else {
@@ -825,24 +874,79 @@
         }
 
         async function evaluateAITrades(player) {
-            if (players.filter(p => p.isAI && !p.isBankrupt).length < 2) return;
+            if (difficultyLevel === 'easy') return; // Easy AI does not trade
+
+            const aiPlayers = players.filter(p => p.isAI && !p.isBankrupt);
+            if (aiPlayers.length === 0) return;
 
             const potentialGroups = getPotentialMonopolies(player);
             for (const group of potentialGroups) {
                 const missingPropNames = getMissingProperties(player, group.groupName);
                 for (const missingPropName of missingPropNames) {
                     const targetProperty = boardSpaces.find(s => s.name === missingPropName);
-                    const owner = players.find(p => p.isAI && p.id !== player.id && !p.isBankrupt && p.properties.some(prop => prop.name === missingPropName));
+                    const owner = players.find(p => !p.isBankrupt && p.properties.some(prop => prop.name === missingPropName));
                     
-                    if (owner && !hasFullSet(owner, group.groupName)) {
-                        const offerPrice = Math.round(targetProperty.price * (1.2 + Math.random() * 0.5));
+                    if (owner && owner.id !== player.id) { // Ensure owner is not self
+                        let offerPrice = Math.round(targetProperty.price * (1.2 + Math.random() * 0.5)); // Base offer
+                        let isCooperativeTrade = false;
+
+                        if (difficultyLevel === 'hell' && owner.isAI) {
+                            // Hell difficulty: AIs cooperate
+                            const aiTeamTarget = aiPlayers.find(ai => hasFullSet(ai, group.groupName)); // Find an AI with a full set
+                            if (aiTeamTarget && aiTeamTarget.id !== player.id) {
+                                // If player needs a property that another AI has, and that AI is helping a teammate
+                                // The AI might sell it cheaper to help its teammate complete a set
+                                const ownerGroupProps = owner.properties.filter(p => p.group === group.groupName).length;
+                                const targetGroupTotal = boardSpaces.filter(s => s.group === group.groupName).length;
+                                if (ownerGroupProps === targetGroupTotal - 1) { // Owner is close to monopoly
+                                    // If owner is also close to monopoly, they might not sell easily
+                                    offerPrice = Math.round(targetProperty.price * (1.8 + Math.random() * 0.5));
+                                } else {
+                                    // If owner is not close to monopoly, and selling helps a teammate, offer a fair price
+                                    offerPrice = Math.round(targetProperty.price * (0.9 + Math.random() * 0.2)); // Cheaper for cooperation
+                                    isCooperativeTrade = true;
+                                }
+                            }
+                        } else if (difficultyLevel === 'intermediate' && owner.isAI) {
+                            // Intermediate difficulty: AIs don't cooperate, act independently
+                            // AI will evaluate based on its own needs, not other AIs
+                            const ownerGroupProps = owner.properties.filter(p => p.group === group.groupName).length;
+                            const targetGroupTotal = boardSpaces.filter(s => s.group === group.groupName).length;
+                            if (ownerGroupProps === targetGroupTotal - 1) { // Owner is close to monopoly
+                                offerPrice = Math.round(targetProperty.price * (1.8 + Math.random() * 0.5)); // High price
+                            } else {
+                                offerPrice = Math.round(targetProperty.price * (1.2 + Math.random() * 0.5)); // Normal price
+                            }
+                        }
                         
-                        if ((owner.money < 400 && offerPrice > targetProperty.price * 1.2) || offerPrice > targetProperty.price * 1.5) {
+                        if (player.money >= offerPrice) { // AI only offers if it can afford
                              showAutoModal("AI Trade Offer", `${player.name} offers to buy ${targetProperty.name} from ${owner.name} for $${offerPrice}.`, 1500, null, { modalType: 'trade' });
                              await sleep(1500);
 
-                             const isGoodDealForOwner = offerPrice > targetProperty.price * 1.4 || (owner.money < 200 && offerPrice > targetProperty.price * 1.1);
-                             if (isGoodDealForOwner && player.money >= offerPrice) {
+                             let ownerAccepts = false;
+                             if (owner.isAI) {
+                                 // AI owner's decision to accept/reject
+                                 let acceptThreshold = targetProperty.price * 1.4; // Default for Intermediate
+                                 if (difficultyLevel === 'easy') {
+                                     acceptThreshold = targetProperty.price * 1.2; // Easy AI accepts lower offers
+                                 } else if (difficultyLevel === 'hell') {
+                                     if (isCooperativeTrade) {
+                                         acceptThreshold = targetProperty.price * 0.8; // Hell AI accepts very low offers to help teammates
+                                     } else {
+                                         acceptThreshold = targetProperty.price * 1.6; // Hell AI is greedy if not helping a teammate
+                                     }
+                                 }
+
+                                 if (offerPrice >= acceptThreshold || (owner.money < 200 && offerPrice > targetProperty.price * 1.1)) {
+                                     ownerAccepts = true;
+                                 }
+                             } else { // Human owner
+                                 // Human decides via modal, but for AI-to-AI, we simulate acceptance
+                                 // This branch should ideally not be hit for AI-to-AI trades, but keeping it for completeness
+                                 ownerAccepts = false; // Human will decide
+                             }
+
+                             if (ownerAccepts) {
                                  executeTrade(player, owner, targetProperty, offerPrice);
                                  showAutoModal("Trade Accepted!", `${owner.name} sold ${targetProperty.name} to ${player.name} for $${offerPrice}.`, 1500, null, { modalType: 'trade' });
                                  await sleep(1500);
@@ -881,7 +985,8 @@
                         const currentRent = p.rent * Math.pow(2, numStations - 1);
                         rentInfo = `<span class="text-green-400 ml-auto">$${currentRent}</span>`;
                     }
-                    const tradeableClass = player.isAI && !players[0].isBankrupt ? 'tradeable-property' : '';
+                    // Only allow trading if current player is human and owner is AI, and difficulty is not easy
+                    const tradeableClass = (!players[0].isAI && player.isAI && difficultyLevel !== 'easy') ? 'tradeable-property' : '';
                     return `<li class="flex items-center text-sm p-1 rounded-md ${tradeableClass}" data-owner-id="${player.id}" data-prop-name="${p.name}">
                         <span class="w-3 h-3 rounded-sm mr-2 flex-shrink-0" style="background-color:${p.color || '#808080'}; border: 1px solid #4a5568;"></span>
                         ${p.name} ${rentInfo}
@@ -974,6 +1079,7 @@
             gameActive = false;
             if (backgroundMusic) backgroundMusic.stop();
             if (activePlayers.length === 1 && !activePlayers[0].isAI) { triggerWin(); } else { triggerLose(); }
+            localStorage.removeItem('bangkokMonopolySave'); // Clear save on game end
         }
         
         function animateDice(d1, d2, callback) {
@@ -984,6 +1090,8 @@
                 drawDice(diceContainer[1], Math.floor(Math.random() * 6) + 1);
                 if (++count > 10) { clearInterval(interval); drawDice(diceContainer[0], d1); drawDice(diceContainer[1], d2); setTimeout(callback, 250); }
             }, 50);
+            diceRollCount++;
+            saveGame();
         }
         
         function drawDice(container, value) {
@@ -1229,26 +1337,91 @@
             }
             
             priceMarkup = Math.max(1.1, priceMarkup);
-            const finalPrice = Math.round((propertyToBuy.price * priceMarkup) / 10) * 10;
-            const canAfford = humanPlayer.money >= finalPrice;
+            let finalPrice = Math.round((propertyToBuy.price * priceMarkup) / 10) * 10;
+            let currentOffer = finalPrice;
 
-            const tradeBody = `
-                <p class="mb-4">${reason}</p>
-                <p class="text-2xl font-bold">Offer: <span class="text-yellow-400">$${finalPrice}</span> for ${propertyToBuy.name}</p>
-                <p class="mt-2 text-sm text-gray-400">Your balance: $${humanPlayer.money}</p>
-                ${!canAfford ? '<p class="text-red-400 mt-2">You cannot afford this offer.</p>' : ''}`;
-            
-            showModal("Trade Offer", tradeBody, [
-                { text: "Accept", className: canAfford ? 'bg-green-600' : 'bg-gray-600 cursor-not-allowed', action: canAfford ? () => executeTrade(humanPlayer, aiPlayer, propertyToBuy, finalPrice) : () => {} },
-                { text: "Decline", className: 'bg-red-600', action: () => modal.classList.add('hidden') }
-            ]);
+            const showTradeModal = (offer) => {
+                const canAfford = humanPlayer.money >= offer;
+                const tradeBody = `
+                    <p class="mb-4">${reason}</p>
+                    <p class="text-2xl font-bold">AI Offer: <span class="text-yellow-400">$${offer}</span> for ${propertyToBuy.name}</p>
+                    <p class="mt-2 text-sm text-gray-400">Your balance: $${humanPlayer.money}</p>
+                    <div class="mt-4">
+                        <label for="counter-offer" class="block text-lg mb-2">Your Counter Offer:</label>
+                        <input type="number" id="counter-offer" value="${offer}" min="${Math.floor(propertyToBuy.price * 0.5)}" max="${Math.floor(propertyToBuy.price * 5)}" class="text-black text-center p-2 rounded-md w-full max-w-xs border border-gray-600 bg-gray-200">
+                    </div>
+                    ${!canAfford ? '<p class="text-red-400 mt-2">You cannot afford the AI\'s offer.</p>' : ''}`;
+                
+                showModal("Trade Offer", tradeBody, [
+                    { text: "Accept AI Offer", className: canAfford ? 'bg-green-600' : 'bg-gray-600 cursor-not-allowed', action: canAfford ? () => executeTrade(humanPlayer, aiPlayer, propertyToBuy, offer) : () => {} },
+                    { text: "Counter Offer", className: 'bg-blue-600', action: () => {
+                        const counter = parseInt(document.getElementById('counter-offer').value);
+                        if (isNaN(counter) || counter <= 0) {
+                            playSound('error');
+                            showAutoModal("Invalid Offer", "Please enter a valid number.", 1200, () => showTradeModal(offer));
+                            return;
+                        }
+                        evaluateCounterOffer(humanPlayer, aiPlayer, propertyToBuy, counter);
+                    }},
+                    { text: "Decline All", className: 'bg-red-600', action: () => modal.classList.add('hidden') }
+                ]);
+            };
+
+            showTradeModal(finalPrice);
+        }
+
+        function evaluateCounterOffer(humanPlayer, aiPlayer, propertyToBuy, counterOffer) {
+            let aiAccepts = false;
+            let aiReason = '';
+            const originalPrice = propertyToBuy.price;
+
+            // AI's evaluation of the counter offer
+            if (counterOffer >= originalPrice * 1.0 && counterOffer <= originalPrice * 1.5) { // Fair range
+                aiAccepts = Math.random() < 0.7; // 70% chance to accept
+                aiReason = "This is a reasonable offer.";
+            } else if (counterOffer > originalPrice * 1.5 && counterOffer <= originalPrice * 2.5) { // Good offer for AI
+                aiAccepts = Math.random() < 0.9; // 90% chance to accept
+                aiReason = "That's a very good offer!";
+            } else if (counterOffer < originalPrice * 1.0) { // Low offer
+                aiAccepts = Math.random() < 0.2; // 20% chance to accept
+                aiReason = "That's a bit low for me.";
+            } else if (counterOffer > originalPrice * 2.5) { // Too high offer (AI will likely reject unless desperate)
+                aiAccepts = Math.random() < 0.1; // 10% chance to accept
+                aiReason = "That's an outrageous offer!";
+            }
+
+            // Influence of AI's financial situation
+            if (aiPlayer.money < 200 && counterOffer > originalPrice * 0.8) {
+                aiAccepts = true; // AI is desperate, accepts lower
+                aiReason += " I really need the money.";
+            }
+
+            // Influence of difficulty level
+            if (difficultyLevel === 'hell') {
+                const aiTeamTarget = players.find(p => p.isAI && p.id !== aiPlayer.id && hasFullSet(p, propertyToBuy.group));
+                if (aiTeamTarget) { // If selling helps a teammate complete a set
+                    if (counterOffer < originalPrice * 1.2) { // Human offering too low for a strategic property
+                        aiAccepts = false;
+                        aiReason = "I can't sell this, it's crucial for my team!";
+                    } else if (counterOffer > originalPrice * 1.8) { // Human offering very high
+                        aiAccepts = true; // AI might sell if the offer is irresistible, even if strategic
+                        aiReason = "That's a lot of money, I'll take it!";
+                    }
+                }
+            }
+
+            if (aiAccepts) {
+                showAutoModal("Counter Offer Accepted!", `${aiPlayer.name} accepted your offer of $${counterOffer} for ${propertyToBuy.name}.`, 1500, () => executeTrade(humanPlayer, aiPlayer, propertyToBuy, counterOffer));
+            } else {
+                showAutoModal("Counter Offer Rejected", `${aiPlayer.name} rejected your offer. ${aiReason}`, 1500, () => modal.classList.add('hidden'));
+            }
         }
         
         // --- Card Actions ---
         function advanceTo(player, locationName) {
             const currentPos = player.position;
             const targetPos = boardSpaces.findIndex(s => s.name === locationName);
-            if (targetPos < currentPos) { updatePlayerMoney(player, 200, false); }
+            if (targetPos < currentPos) { updatePlayerMoney(player, 200, false); } // Only collect if passing GO
             player.position = targetPos;
         }
         function advanceToNearest(player, type) {
@@ -1258,7 +1431,7 @@
                 const checkPos = (currentPos + i) % boardSpaces.length;
                 if (boardSpaces[checkPos].type === type) { nearestPos = checkPos; break; }
             }
-            if (nearestPos < currentPos) { updatePlayerMoney(player, 200, false); }
+            if (nearestPos < currentPos) { updatePlayerMoney(player, 200, false); } // Only collect if passing GO
             player.position = nearestPos;
         }
         function generalRepairs(player, houseCost, hotelCost) {
@@ -1277,6 +1450,43 @@
                     {text: `Pay $${amount}`, className: 'bg-red-600', action: () => { updatePlayerMoney(player, -amount, true); nextTurn(); }},
                     {text: 'Take Chance', className: 'bg-yellow-500', action: () => { modal.classList.add('hidden'); playSound('card'); drawCard(player, chanceCards, 'Chance'); }}
                 ]);
+            }
+        }
+
+        // --- Save/Load Game ---
+        function saveGame() {
+            if (diceRollCount % 5 === 0) {
+                const gameState = {
+                    players: players,
+                    currentPlayerIndex: currentPlayerIndex,
+                    diceRollCount: diceRollCount,
+                    difficultyLevel: difficultyLevel
+                };
+                localStorage.setItem('bangkokMonopolySave', JSON.stringify(gameState));
+                console.log("Game saved automatically.");
+            }
+        }
+
+        function checkSavedGame() {
+            const savedGame = localStorage.getItem('bangkokMonopolySave');
+            if (savedGame) {
+                document.getElementById('setup-screen').classList.remove('flex');
+                document.getElementById('setup-screen').classList.add('hidden');
+                showModal("Continue Game?", "A saved game was found. Would you like to continue or start a new game?", [
+                    { text: "Continue", className: 'bg-green-600', action: () => {
+                        modal.classList.add('hidden');
+                        startGame(0, '', JSON.parse(savedGame)); // AI count and difficulty will be loaded from save
+                    }},
+                    { text: "New Game", className: 'bg-red-600', action: () => {
+                        localStorage.removeItem('bangkokMonopolySave');
+                        modal.classList.add('hidden');
+                        setupScreen.classList.remove('hidden');
+                        setupScreen.classList.add('flex');
+                    }}
+                ], { noCloseButton: true });
+            } else {
+                setupScreen.classList.remove('hidden');
+                setupScreen.classList.add('flex');
             }
         }
 
