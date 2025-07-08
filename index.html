@@ -884,7 +884,8 @@
                 const missingPropNames = getMissingProperties(player, group.groupName);
                 for (const missingPropName of missingPropNames) {
                     const targetProperty = boardSpaces.find(s => s.name === missingPropName);
-                    const owner = players.find(p => !p.isBankrupt && p.properties.some(prop => prop.name === missingPropName));
+                    // AI will only try to buy from other AIs, not human players
+                    const owner = players.find(p => p.isAI && !p.isBankrupt && p.properties.some(prop => prop.name === missingPropName));
                     
                     if (owner && owner.id !== player.id) { // Ensure owner is not self
                         let offerPrice = Math.round(targetProperty.price * (1.2 + Math.random() * 0.5)); // Base offer
@@ -940,9 +941,7 @@
                                  if (offerPrice >= acceptThreshold || (owner.money < 200 && offerPrice > targetProperty.price * 1.1)) {
                                      ownerAccepts = true;
                                  }
-                             } else { // Human owner
-                                 // Human decides via modal, but for AI-to-AI, we simulate acceptance
-                                 // This branch should ideally not be hit for AI-to-AI trades, but keeping it for completeness
+                             } else { // Human owner - This block will now effectively not be reached
                                  ownerAccepts = false; // Human will decide
                              }
 
@@ -1058,14 +1057,14 @@
         function getPotentialMonopolies(player) {
             const groups = {};
             player.properties.filter(p => p.group).forEach(p => {
-                if (!groups[p.group]) groups[p.group] = 0;
-                groups[p.group]++;
+                if (!groups[p.group]) groups[p.group] = []; // Changed to array to store properties
+                groups[p.group].push(p);
             });
             const potential = [];
             for (const groupName in groups) {
                 const totalInGroup = boardSpaces.filter(s => s.group === groupName).length;
-                if (groups[groupName] >= totalInGroup - 1 && groups[groupName] < totalInGroup) {
-                    potential.push({ groupName, count: groups[groupName] });
+                if (groups[groupName].length >= totalInGroup - 1 && groups[groupName].length < totalInGroup) {
+                    potential.push({ groupName, count: groups[groupName].length });
                 }
             }
             return potential;
